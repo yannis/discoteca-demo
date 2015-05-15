@@ -1,0 +1,21 @@
+source 'https://rubygems.org'
+
+gem 'rails', '4.2.1'
+gem 'sqlite3'
+
+gem 'active_model_serializers'
+
+group :development, :test do
+  gem 'rspec-rails'
+  gem 'factory_girl_rails'
+  gem 'guard'
+  gem 'guard-rspec'
+  gem 'guard-bundler'
+  gem 'rb-fsevent'
+  gem 'faker'
+  gem 'shoulda-matchers', require: false
+  gem 'byebug'
+  gem 'web-console', '~> 2.0'
+  gem 'spring'
+end
+

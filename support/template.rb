@@ -8,7 +8,7 @@ gem "rb-fsevent", "0.9.4"
 gem "faker", "1.4.3"
 gem "shoulda-matchers", "2.8.0", require: false
 
-run 'bundle config --local PATH ~/railsapps/genevarb_discoteca/bundle'
+run 'bundle config --local PATH ~/railsapps/discoteca/bundle'
 run 'bundle install'
 
 run 'mkdir config/initializers'

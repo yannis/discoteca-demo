@@ -2,9 +2,9 @@
 	"folders":
 	[
 		{
-			"path": "/Users/yannis/railsapps/genevarb_discoteca",
-      "folder_exclude_patterns": ["discoteca/bundle", "discoteca/tmp", "discoteca/log", "discoteca/.sass-cache", "discoteca/.yardoc", "discoteca/coverage", "rails/bundle", "rails/tmp", "rails/log", "rails/.sass-cache", "rails/.yardoc", "rails/coverage"],
-      "file_exclude_patterns": ["*.sublime-workspace*"]
+			"path": "/Users/yannis/railsapps/discoteca",
+      "folder_exclude_patterns": ["bundle", "tmp", "log", ".sass-cache", ".yardoc", "coverage", "test.sqlite3", "node_modules", "bower_components"],
+      "file_exclude_patterns": ["Gemfile.lock", "*.sqlite3", "*.sublime-workspace*"]
 		}
 	]
 }

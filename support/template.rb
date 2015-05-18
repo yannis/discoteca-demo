@@ -86,15 +86,12 @@ File.open("spec/factories/albums.rb", "r+") do |f|
 end)
 end
 
-
 generate(:serializer, "artist name:string")
 generate(:serializer, "album name:string")
-
 
 File.open("app/serializers/artist_serializer.rb", "r+") do |f|
   f.write %Q(class ArtistSerializer < ActiveModel::Serializer
   attributes :id, :name
-  embed :ids
   has_many :albums
 end)
 end
@@ -105,27 +102,82 @@ File.open("app/serializers/album_serializer.rb", "r+") do |f|
 end)
 end
 
-generate(:controller, "Api::V1::Artists index show --skip-assets --skip-template-engine --skip-helper")
-generate(:controller, "Api::V1::Albums index show --skip-assets --skip-template-engine --skip-helper")
+generate(:controller, "Api::V1::Artists index show create update destroy --skip-assets --skip-template-engine --skip-helper")
+generate(:controller, "Api::V1::Albums index show create update destroy --skip-assets --skip-template-engine --skip-helper")
 
 File.open("spec/controllers/api/v1/artists_controller_spec.rb", "r+") do |f|
   f.write %Q(require 'rails_helper'
 
 RSpec.describe Api::V1::ArtistsController, type: :controller do
 
+  let!(:artist) {create :artist}
+
   describe "GET #index" do
-    it "returns http success" do
+    before {
       xhr :get, :index
+    }
+    it "returns http success" do
       expect(response).to have_http_status(:success)
+    end
+    it "assigns [artist] to @artists" do
+      expect(assigns(:artists)).to match_array [artist]
     end
   end
 
   describe "GET #show" do
     let(:artist) {create :artist}
+    before {xhr :get, :show, id: artist.to_param}
     it "returns http success" do
-      xhr :get, :show, id: artist.to_param
       expect(response).to have_http_status(:success)
     end
+    it "returns serialized artist" do
+      expect(response.body).to eql "{\"artist\":{\"id\":1,\"name\":\"#{artist.name}\",\"album_ids\":[]}}"
+    end
+    it "assigns artist to @artist" do
+      expect(assigns(:artist)).to eql artist
+    end
+  end
+
+  describe "GET 'create'", :focus do
+    it "returns http success" do
+      xhr :get, 'create', format: :json, artist: {name: "a new artist"}
+      expect(response).to be_success
+    end
+
+    it {
+      expect{
+      xhr :get, 'create', format: :json, artist: {name: "a new artist"}
+      }.to change{Artist.count}.by(+1)
+    }
+  end
+
+  describe "PUT 'update'" do
+    before {
+      xhr :put, 'update', id: artist.id, artist: {name: "updated name"}, format: :json
+    }
+    it {expect(response).to be_success}
+    it {expect(artist.reload.name).to eql "updated name"}
+    it "assigns artist to @artist" do
+      expect(assigns(:artist)).to eql artist
+    end
+  end
+
+  describe "DELETE 'destroy'" do
+    it "returns http success" do
+      xhr :delete, 'destroy', id: artist.id
+      expect(response).to be_success
+    end
+
+    it "assigns artist to @artist" do
+      xhr :delete, 'destroy', id: artist.id
+      expect(assigns(:artist)).to eql artist
+    end
+
+    it {
+      expect{
+        xhr :delete, 'destroy', id: artist.id
+      }.to change{Artist.count}.by(-1)
+    }
   end
 end)
 end
@@ -133,16 +185,41 @@ end
 File.open("app/controllers/api/v1/artists_controller.rb", "r+") do |f|
   f.write %Q(class Api::V1::ArtistsController < ApplicationController
   def index
-    artists = Artist.all
-    render json: artists, each_serializer: ArtistSerializer
+    @artists = Artist.all
+    render json: @artists, each_serializer: ArtistSerializer
   end
 
   def show
-    artist = Artist.find(params[:id])
-    render json: artist, serializer: ArtistSerializer
+    @artist = Artist.find(params[:id])
+    render json: @artist, serializer: ArtistSerializer
   end
-end
-  )
+
+  def create
+    @artist = Artist.new sanitizer
+    if @artist.save
+      render json: @artist, serializer: ArtistSerializer, status: :created
+    else
+      render json: {errors: @artist.errors}, status: :unprocessable_entity
+    end
+  end
+
+  def update
+    @artist = Artist.find(params[:id])
+    @artist.update_attributes sanitizer
+    render json: @artist
+  end
+
+  def destroy
+    @artist = Artist.find(params[:id])
+    render json: @artist.destroy
+  end
+
+  private
+
+  def sanitizer
+    params.require(:artist).permit(:name, :issued_on, :artist_id, :artwork_url)
+  end
+end)
 end
 
 File.open("spec/controllers/api/v1/albums_controller_spec.rb", "r+") do |f|
@@ -150,19 +227,75 @@ File.open("spec/controllers/api/v1/albums_controller_spec.rb", "r+") do |f|
 
 RSpec.describe Api::V1::AlbumsController, type: :controller do
 
+  let(:artist) {create :artist}
+  let!(:album) {create :album, artist: artist}
+
   describe "GET #index" do
-    it "returns http success" do
+    before {
       xhr :get, :index
+    }
+    it "returns http success" do
       expect(response).to have_http_status(:success)
+    end
+    it "assigns [album] to @albums" do
+      expect(assigns(:albums)).to match_array [album]
     end
   end
 
   describe "GET #show" do
     let(:album) {create :album}
+    before {xhr :get, :show, id: album.to_param}
     it "returns http success" do
-      xhr :get, :show, id: album.to_param
       expect(response).to have_http_status(:success)
     end
+    it "returns serialized album" do
+      expect(response.body).to eql "{\"album\":{\"id\":1,\"name\":\"#{album.name}\",\"issued_on\":\"#{album.issued_on}\",\"artwork_url\":\"#{album.artwork_url}\",\"artist_id\":1}}"
+    end
+    it "assigns album to @album" do
+      expect(assigns(:album)).to eql album
+    end
+  end
+
+  describe "GET 'create'", :focus do
+    it "returns http success" do
+      xhr :get, 'create', format: :json, album: {name: "a new album", issued_on: 20.years.ago, artist_id: artist.to_param}
+      expect(response).to be_success
+    end
+
+    it {
+      expect{
+      xhr :get, 'create', format: :json, album: {name: "a new album", issued_on: 20.years.ago, artist_id: artist.to_param}
+      }.to change{Album.count}.by(+1)
+    }
+  end
+
+  describe "PUT 'update'" do
+    before {
+      xhr :put, 'update', id: album.id, album: {name: "updated name"}, format: :json
+    }
+    it {expect(response).to be_success}
+    it {expect(album.reload.name).to eql "updated name"}
+    it "assigns album to @album" do
+      expect(assigns(:album)).to eql album
+    end
+  end
+
+  describe "DELETE 'destroy'" do
+    it "returns http success" do
+      xhr :delete, 'destroy', id: album.id
+      expect(response).to be_success
+    end
+
+    it "assigns album to @album" do
+      xhr :delete, 'destroy', id: album.id
+      expect(assigns(:album)).to eql album
+    end
+
+    it {
+      expect{
+        xhr :delete, 'destroy', id: album.id
+      }.to change{Album.count}.by(-1)
+    }
   end
 end)
 end
@@ -170,16 +303,41 @@ end
 File.open("app/controllers/api/v1/albums_controller.rb", "r+") do |f|
   f.write %Q(class Api::V1::AlbumsController < ApplicationController
   def index
-    albums = Album.all
-    render json: albums, each_serializer: AlbumSerializer
+    @albums = Album.all
+    render json: @albums, each_serializer: AlbumSerializer
   end
 
   def show
-    album = Album.find(params[:id])
-    render json: album, serializer: AlbumSerializer
+    @album = Album.find(params[:id])
+    render json: @album, serializer: AlbumSerializer
   end
-end
-  )
+
+  def create
+    @album = Album.new sanitizer
+    if @album.save
+      render json: @album, serializer: AlbumSerializer, status: :created
+    else
+      render json: {errors: @album.errors}, status: :unprocessable_entity
+    end
+  end
+
+  def update
+    @album = Album.find(params[:id])
+    @album.update_attributes sanitizer
+    render json: @album
+  end
+
+  def destroy
+    @album = Album.find(params[:id])
+    render json: @album.destroy
+  end
+
+  private
+
+  def sanitizer
+    params.require(:album).permit(:name, :issued_on, :artist_id, :artwork_url)
+  end
+end)
 end
 
 inside app_name do
@@ -194,8 +352,8 @@ File.open("config/routes.rb", "r+") do |f|
   f.write %Q(Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
-      resources :artists, only: [:index, :show]
-      resources :albums, only: [:index, :show]
+      resources :artists, only: [:index, :show, :create, :update, :destroy]
+      resources :albums, only: [:index, :show, :create, :update, :destroy]
     end
   end
 end)

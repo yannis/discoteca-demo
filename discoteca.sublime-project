@@ -3,7 +3,7 @@
 	[
 		{
 			"path": "/Users/yannis/railsapps/discoteca",
-      "folder_exclude_patterns": ["bundle", "tmp", "log", ".sass-cache", ".yardoc", "coverage", "test.sqlite3", "node_modules", "bower_components"],
+      "folder_exclude_patterns": ["bundle", "tmp", "log", ".sass-cache", ".yardoc", "coverage", "test.sqlite3", "node_modules", "bower_components", "dist"],
       "file_exclude_patterns": ["Gemfile.lock", "*.sqlite3", "*.sublime-workspace*"]
 		}
 	]

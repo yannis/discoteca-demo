@@ -1,18 +1,19 @@
+# Install the required gem
 gem "active_model_serializers", "0.9.3"
-gem "rspec-rails", "3.2.1"
-gem "factory_girl_rails", "4.5.0"
-gem "guard", "2.12.5"
-gem "guard-rspec", "4.5.0"
-gem "guard-bundler", "2.1.0"
-gem "rb-fsevent", "0.9.4"
-gem "faker", "1.4.3"
-gem "shoulda-matchers", "2.8.0", require: false
-
+# rack-cors allows rack-based applications to make cross domain AJAX calls without using workarounds such as JSONP
+gem 'rack-cors', require: 'rack/cors'
+gem_group :development, :test do
+  gem "rspec-rails", "3.2.1"
+end
+gem_group :test do
+  gem "factory_girl_rails", "4.5.0"
+  gem "faker", "1.4.3"
+  gem "shoulda-matchers", "2.8.0", require: false
+end
 run 'bundle config --local PATH ~/railsapps/discoteca/bundle'
 run 'bundle install'
 
-run 'mkdir config/initializers'
-
+# basic settings for active_model_serializers
 File.open("config/initializers/active_model_serializers.rb", "w") do |f|
   f.write %Q(ActiveModel::Serializer.setup do |config|
   config.embed = :ids
@@ -20,15 +21,37 @@ File.open("config/initializers/active_model_serializers.rb", "w") do |f|
 end)
 end
 
-run 'bundle exec guard init rspec'
-run 'bundle exec guard init bundler'
+line = 'config.active_record.raise_in_transactional_callbacks = true'
+gsub_file 'config/application.rb', /(#{Regexp.escape(line)})/mi do
+|match|
+  %Q(#{match}
+
+    config.action_dispatch.default_headers = {
+      'Access-Control-Allow-Origin' => 'http://localhost:4200'
+    })
+end
 
 run 'cp ../support/seeds.rb db/seeds.rb'
 
 generate("rspec:install")
 
 generate(:model, "artist name:string")
-generate(:model, "album name:string issued_on:date artist:belongs_to artwork_url:string")
+generate(:model, "album name:string released_on:date artist:belongs_to artwork_url:string")
+
+
+line1 = "require 'rspec/rails'"
+line2 = 'config.fixture_path = "#{::Rails.root}/spec/fixtures"'
+gsub_file 'spec/rails_helper.rb', /(#{Regexp.escape(line1)})/mi do
+|match|
+  %Q(#{match}
+require 'shoulda/matchers')
+end
+gsub_file 'spec/rails_helper.rb', /(#{Regexp.escape(line2)})/mi do
+|match|
+  %Q(#{match}
+config.include FactoryGirl::Syntax::Methods)
+end
+
 
 File.open("spec/models/artist_spec.rb", "r+") do |f|
   f.write %Q(require 'rails_helper'
@@ -79,7 +102,7 @@ File.open("spec/factories/albums.rb", "r+") do |f|
   f.write %Q(FactoryGirl.define do
   factory :album do
     name {Faker::Name.name}
-    issued_on {(1980..2000).to_a.sample}
+    released_on {30.years.ago.to_date}
     artwork_url {Faker::Company.logo}
     association :artist
   end
@@ -98,12 +121,13 @@ end
 
 File.open("app/serializers/album_serializer.rb", "r+") do |f|
   f.write %Q(class AlbumSerializer < ActiveModel::Serializer
-  attributes :id, :name, :issued_on, :artwork_url, :artist_id
+  attributes :id, :name, :released_on, :artwork_url, :artist_id
 end)
 end
 
 generate(:controller, "Api::V1::Artists index show create update destroy --skip-assets --skip-template-engine --skip-helper")
 generate(:controller, "Api::V1::Albums index show create update destroy --skip-assets --skip-template-engine --skip-helper")
+generate(:controller, "Api::Csrf index --skip-assets --skip-template-engine --skip-helper")
 
 File.open("spec/controllers/api/v1/artists_controller_spec.rb", "r+") do |f|
   f.write %Q(require 'rails_helper'
@@ -131,7 +155,7 @@ RSpec.describe Api::V1::ArtistsController, type: :controller do
       expect(response).to have_http_status(:success)
     end
     it "returns serialized artist" do
-      expect(response.body).to eql "{\"artist\":{\"id\":1,\"name\":\"#{artist.name}\",\"album_ids\":[]}}"
+      expect(response.body).to eql ")+ '{\"artist\":{\"id\":1,\"name\":\"#{artist.name}\",\"album_ids\":[]}}'+%Q("
     end
     it "assigns artist to @artist" do
       expect(assigns(:artist)).to eql artist
@@ -185,7 +209,7 @@ end
 File.open("app/controllers/api/v1/artists_controller.rb", "r+") do |f|
   f.write %Q(class Api::V1::ArtistsController < ApplicationController
   def index
-    @artists = Artist.all
+    @artists = Artist.includes(:albums)
     render json: @artists, each_serializer: ArtistSerializer
   end
 
@@ -217,7 +241,7 @@ File.open("app/controllers/api/v1/artists_controller.rb", "r+") do |f|
   private
 
   def sanitizer
-    params.require(:artist).permit(:name, :issued_on, :artist_id, :artwork_url)
+    params.require(:artist).permit(:name, :released_on, :artist_id, :artwork_url)
   end
 end)
 end
@@ -249,7 +273,7 @@ RSpec.describe Api::V1::AlbumsController, type: :controller do
       expect(response).to have_http_status(:success)
     end
     it "returns serialized album" do
-      expect(response.body).to eql "{\"album\":{\"id\":1,\"name\":\"#{album.name}\",\"issued_on\":\"#{album.issued_on}\",\"artwork_url\":\"#{album.artwork_url}\",\"artist_id\":1}}"
+      expect(response.body).to eql ")+'{\"album\":{\"id\":1,\"name\":\"#{album.name}\",\"released_on\":\"#{album.released_on}\",\"artwork_url\":\"#{album.artwork_url}\",\"artist_id\":1}}"'+%Q(
     end
     it "assigns album to @album" do
       expect(assigns(:album)).to eql album
@@ -258,13 +282,13 @@ RSpec.describe Api::V1::AlbumsController, type: :controller do
 
   describe "GET 'create'", :focus do
     it "returns http success" do
-      xhr :get, 'create', format: :json, album: {name: "a new album", issued_on: 20.years.ago, artist_id: artist.to_param}
+      xhr :get, 'create', format: :json, album: {name: "a new album", released_on: 20.years.ago, artist_id: artist.to_param}
       expect(response).to be_success
     end
 
     it {
       expect{
-      xhr :get, 'create', format: :json, album: {name: "a new album", issued_on: 20.years.ago, artist_id: artist.to_param}
+      xhr :get, 'create', format: :json, album: {name: "a new album", released_on: 20.years.ago, artist_id: artist.to_param}
       }.to change{Album.count}.by(+1)
     }
   end
@@ -335,7 +359,46 @@ File.open("app/controllers/api/v1/albums_controller.rb", "r+") do |f|
   private
 
   def sanitizer
-    params.require(:album).permit(:name, :issued_on, :artist_id, :artwork_url)
+    params.require(:album).permit(:name, :released_on, :artist_id, :artwork_url)
+  end
+end)
+end
+
+
+File.open("spec/controllers/api/csrf_controller_spec.rb", "w") do |f|
+  f.write %Q(require 'rails_helper'
+
+RSpec.describe Api::CsrfController, type: :controller do
+
+  describe "GET #index" do
+    it "returns http success" do
+      get :index
+      expect(response).to have_http_status(:success)
+    end
+  end
+end
+)
+end
+
+File.open("app/controllers/api/csrf_controller.rb", "w") do |f|
+  f.write %Q(class Api::CsrfController < ApplicationController
+
+  def index
+    render json: { request_forgery_protection_token => form_authenticity_token }.to_json
+  end
+end
+)
+end
+
+run "rm config/routes.rb"
+File.open("config/routes.rb", "w") do |f|
+  f.write %Q(Rails.application.routes.draw do
+  namespace :api do
+    get :csrf, to: 'csrf#index'
+    namespace :v1 do
+      resources :artists, only: [:index, :show, :create, :update, :destroy]
+      resources :albums, only: [:index, :show, :create, :update, :destroy]
+    end
   end
 end)
 end
@@ -348,13 +411,9 @@ inside app_name do
   rake "db:seed"
 end
 
-File.open("config/routes.rb", "r+") do |f|
-  f.write %Q(Rails.application.routes.draw do
-  namespace :api do
-    namespace :v1 do
-      resources :artists, only: [:index, :show, :create, :update, :destroy]
-      resources :albums, only: [:index, :show, :create, :update, :destroy]
-    end
-  end
-end)
+
+
+def gsub_file(path, regexp, *args, &block)
+  content = File.read(path).gsub(regexp, *args, &block)
+  File.open(path, 'wb') { |file| file.write(content) }
 end

@@ -14,7 +14,7 @@
 
 To gain some time, we will use a Ruby on Rails template to generate the API that will serve the data.
 
-Go see the template ```support/template.rb``` it's commented.
+Before running it, go read the commented template `support/template.rb`.
 
 And now run:
 
@@ -25,63 +25,65 @@ And now run:
 
 ## the Ember front-end
 
+To create the ember app, we will use ember-cli which provides us with many different tool to manage an ember app:
+
+  - a common project structure
+  - ES6 modules support (through the ES6 Module Transpiler)
+  - a fast asset pipeline (broccoli)
+  - generators
+  - a test environment
+  - livereload
+  - …
+
+Generate the Ember.js app
+
 - `ember new discoteca --skip-git`
+
+This creates the project structure and load the necessary librairies through npm (ember, ember-data,…)
+
+Rename the project to 'ember', and start the server:
+
 - `mv discoteca ember`
 - `cd discoteca ember`
+- `ember server --proxy=http://localhost:3000`
 
-Start the server:
+This commande starts a node Express server to serve our application and the `--proxy` flag tells the server to proxy all ajax requests to the given address.
 
-`ember server --proxy=http://localhost:3000`
-
-This commande start the server to serve our application and the `--proxy` flag tells the server to proxy all ajax requests to the given address.
-
-and visit [http://localhost:4200](http://localhost:4200).
+Now visit [http://localhost:4200](http://localhost:4200).
 
 Ember greats us!
 
+We can quickly style this by adding bootstrap via CDN (in app.html):
+
+```
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+```
+
+Change the title in application.hbs to Discoteca (and add some bootsrap markup).
+
+```
+<div class='container'>
+  <div class='row'>
+    <div class='col-sm-12'>
+      <h1 id="title">Discoteca</h1>
+      {{outlet}}
+    </div>
+  </div>
+</div>
+```
+
 We can also see our ember tests running by visiting [http://localhost:4200/tests](http://localhost:4200/tests).
 
-All tests are green whisch is expected since we stil don't have modified anything.
-
-
-To exploit our API, we will use the powerfull (and controversial) ember-data.
-At this time ember-data is still beta (v1.0.0-beta.17) but v1 is planned to be released early june.
-
-- ORM-like library for ember.js
-- uses Promises
-- manage loading and saving records.
-
-Ember-Data match to your API through an adapter library. You can change this adapter to match your api, either by creating your own or chosing an existing one.
-
-
-So ember-cli is a cli for ember:
-  - it provides a series of generators: `ember help generate`
-
-So let's generate an adapter for our application:
-
-`ember g adapter application`
-
-
-By default it uses the DS.RESTAdapter. Since we've built our api with active_model_serializers, we have to tell ember-data to use its built-in [DS.ActiveModelAdapter](http://emberjs.com/api/data/classes/DS.ActiveModelAdapter.html).
-
-The ActiveModelAdapter is a subclass of the RESTAdapter designed to integrate with a JSON API that uses an underscored naming convention instead of camelCasing, as the one provided by active_model_serializers.
-
-We will also tell our adapter to request our API with url namespaced with 'api/vi/' by giving it a 'namespace' option:
-
-
-```
-import DS from 'ember-data';
-
-export default DS.ActiveModelAdapter.extend({
-   namespace: 'api/v1/'
-});
-```
+All tests are green which is expected since we still haven't modified anything.
 
 <!---
 Reload the page and open the console: -> errors that have to be corrected
 -->
 
-Then correct the [content-security-policy](http://www.ember-cli.com/#content-security-policy) by editing `env.js and add:
+If we reload the page, we can see Content Security Policy as our applications try to reach assets autside of its domain.
+
+We can correct these errors the [content-security-policy](http://www.ember-cli.com/#content-security-policy) by editing `env.js and add:
 
 ```
 module.exports = function(environment) {
@@ -97,26 +99,6 @@ module.exports = function(environment) {
       'report-uri': "http://localhost:4200"
     },
     …
-```
-
-And add quickly add bootstrap via CDN for styling the app (in app.html):
-
-```
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
-```
-
-Change the title in application.hbs to Discoteca (and add some bootsrtrap markup).
-
-```
-<div class='container'>
-  <div class='row'>
-    <div class='col-sm-12'>
-      <h1 id="title">Discoteca</h1>
-      {{outlet}}
-    </div>
-  </div>
-</div>
 ```
 
 It would be nice to see a list of artists when we visit the /artists route
@@ -143,7 +125,6 @@ To make this test pass we have to create the artist resource (model, route):
 
 Bunch of things is generated…
 
-
 Let's change the route/artists to get the model from the API.
 
 ```
@@ -152,14 +133,47 @@ model: function(){
 }
 ```
 
-and change the artists.hbs template to actually show the artists
+To retrive our artists, we will need an adapter:
+
+An adapter is an object that receives requests from a store and translates them into the appropriate action to take against your persistence layer.
+
+To exploit our active_model_serializer API, we will use an adapter from ember-data.
+
+- ORM-like library for ember.js
+- uses Promises
+- manage loading and saving records
+
+At this time ember-data is still beta (v1.0.0-beta.17) but v1 is planned to be released early june.
+
+So ember-cli is a cli for ember:
+  - it provides a series of generators: `ember help generate`
+
+So let's generate an adapter for our application:
+
+`ember g adapter application`
+
+By default it uses the DS.RESTAdapter. Since we've built our api with active_model_serializers, we have to tell ember-data to use its built-in [DS.ActiveModelAdapter](http://emberjs.com/api/data/classes/DS.ActiveModelAdapter.html).
+
+The ActiveModelAdapter is a subclass of the RESTAdapter designed to integrate with a JSON API that uses an underscored naming convention instead of camelCasing, as the one provided by active_model_serializers.
+
+We will also tell our adapter to request our API with url namespaced with 'api/vi/' by giving it a 'namespace' option:
+
+```
+import DS from 'ember-data';
+
+export default DS.ActiveModelAdapter.extend({
+   namespace: 'api/v1/'
+});
+```
+
+We now have to change the artists.hbs template to actually show the artists
 
 ````
 <div class='row'>
   <div class='col-sm-3'>
     <h2>Artists</h2>
     <ul class='artists list-group'>
-      {{#each artist in controller}}
+      {{#each artist in model}}
         <li class="list-group-item artist">
           {{artist.name}}
         </li>
@@ -270,7 +284,7 @@ andThen(function() {
   assert.equal(find(".artist-details h3.artist-name").length, 1, "We see the name of the artist as title");
   assert.equal(find(".artist-albums h4:contains(Albums)").length, 1, "We see the albums list title");
   assert.equal(find(".artist-albums").length, 1, "We see the artist album list");
-  assert.equal(find(".artist-albums .album").length, 3, "We see 3 different albums");
+  assert.equal(find(".artist-albums .artist-album").length, 3, "We see 3 different albums");
 });
 ```
 
@@ -322,10 +336,9 @@ and tel the artist.js model to load the associated albums too.
 `albums: DS.hasMany('album', {async: true})`
 
 
-
 Let's add the possibility to create an artist
 
-`ember g route artists/new  --path=:new`
+`ember g route artists/new  --path=new`
 
 and change route/artists/new to create a new artist
 
@@ -367,9 +380,9 @@ artists/new template
 and to actually save the record, you have to add an action to the controller
 
 ```
-import VersionsBaseController from './base';
+import Ember from 'ember';
 
-export default VersionsBaseController.extend({
+export default Ember.Controller.extend({
   actions: {
     cancel: function() {
       this.model.rollback();
@@ -377,10 +390,12 @@ export default VersionsBaseController.extend({
     },
     save: function() {
       var _this = this;
-      this.get('model.artist').save();
-      this.get('model').save().then(function(artist) {
-        _this.transitionToRoute('artists.show', artist);
-      });
+      this.get('model').save().then(
+        function(artist) {
+          _this.transitionToRoute('artists.show', artist);
+        },
+        function(){}
+      );
     }
   }
 });
@@ -393,26 +408,27 @@ An there's an addon for that.
 
 https://github.com/abuiles/rails-csrf
 
-Let's install it: `npm install rails-csrf --save`
+Let's install it: `npm install rails-csrf@1.0.1 --save`
 and modify ember/app/app.js by adding
 
 ```
 import { setCsrfUrl } from 'rails-csrf/config';
 
-setCsrfUrl('http://localhost:3000/api/csrf');
+setCsrfUrl('/api/csrf');
 
 loadInitializers(App, 'rails-csrf');
 ```
 
-We also have to allow CORS coming from the ember app in the rails app.
-Add `gem 'rack-cors', require: 'rack/cors'` a gem that provides support for Cross-Origin Resource Sharing (CORS) for Rack compatible web applications, like rails.
+and add a beforeModel callback to the route application.js:
 
-And the allow CORS to localhost:4200 in application.rb:
+import Ember from 'ember';
 
 ```
-config.action_dispatch.default_headers = {
-  'Access-Control-Allow-Origin' => 'http://localhost:4200'
-}
+export default Ember.Route.extend({
+  beforeModel: function() {
+    return this.csrf.fetchToken();
+  }
+});
 ```
 
 And now it works.
@@ -452,13 +468,11 @@ import Ember from 'ember';
 
 export default Ember.ArrayController.extend({
   sortProperties: ['name'],
-  sortAscending: true,
 
   actions: {
     delete: function(artist){
       var _this = this;
       if (window.confirm("Are you sure you want to delete this artist?")) {
-        debugger;
         artist.destroyRecord().then(function(v) {
           _this.transitionTo('artists');
         });
@@ -466,8 +480,8 @@ export default Ember.ArrayController.extend({
     }
   }
 });
-```
 
+```
 
 And a simple link to the action for every artists in artists.hbs
 
@@ -480,11 +494,11 @@ And a simple link to the action for every artists in artists.hbs
         <span class="glyphicon glyphicon-plus"></span>
       {{/link-to}}
     </h2>
-    <ul class='list-group'>
-      {{#each artist in controller}}
+    <ul class='artists list-group'>
+      {{#each controller}}
         <li class="list-group-item artist">
-          {{link-to artist.name "artists.show" artist}}
-          <a href="#" {{action "delete" artist}} class="text-danger pull-right" title="Destroy this version" data-toggle="tooltip" data-placement="top">
+          {{link-to name 'artists.show' this title=name}}
+          <a href="#" {{action "delete" this}} class="text-danger pull-right" title="Destroy this artist">
             <span class="glyphicon glyphicon-trash"></span>
           </a>
         </li>
@@ -495,11 +509,43 @@ And a simple link to the action for every artists in artists.hbs
     {{outlet}}
   </div>
 </div>
+
 ```
 
-Let's add the possibility to edit an artist
+And the possibility to edit an artist:
 
 `ember g route artists/edit  --path=:artist_id/edit`
+
+Add a edit link to the artists.hbs template:
+
+```
+<div class='row'>
+  <div class='col-sm-3'>
+    <h2>
+      Artists
+      {{#link-to "artists.new" classNames='btn btn-success btn-small' title="Enter a new artist"}}
+        <span class="glyphicon glyphicon-plus"></span>
+      {{/link-to}}
+    </h2>
+    <ul class='artists list-group'>
+      {{#each controller}}
+        <li class="list-group-item artist">
+          {{link-to name 'artists.show' this title=name}}
+          <a href="#" {{action "delete" this}} class="text-danger pull-right" title="Destroy this artist">
+            <span class="glyphicon glyphicon-trash"></span>
+          </a>
+          {{#link-to 'artists.edit' this classNames='pull-right'}}
+            <span class="glyphicon glyphicon-pencil"></span>
+          {{/link-to}}
+        </li>
+      {{/each}}
+    </ul>
+  </div>
+  <div class='col-sm-9'>
+    {{outlet}}
+  </div>
+</div>
+```
 
 and change route/artists/edit to get the following model
 
@@ -528,7 +574,7 @@ For the artists/edit.hbs template, let's reuse the form we'have alread built by 
 </div>
 ```
 
-and the artists/-form.hbs partial:
+and the artists/-form.hbs partial: `ember g template artists/-form`
 
 ```
 <form {{action "save" on="submit"}}>
@@ -560,6 +606,10 @@ We can use the same partial in artist/new.hbs:
 ```
 
 We have to implement the save and cancel actions in the artists/edit.js controller:
+
+`ember g controller artists/edit`
+
+and change it to:
 
 ```
 import Ember from 'ember';
@@ -633,16 +683,10 @@ export default ArtistsBaseController.extend({
 });
 ```
 
-Let's add the edit link in artists.hbs:
-
-```
-
-```
-
 Style the active link!
 Ember adds an .active class to link with current url.
 
-Let's add
+Let's add some style to app.css to highlight the active link:
 
 ```
 .list-group a.active {
@@ -651,11 +695,16 @@ Let's add
 }
 ```
 
-to app.css
-
 Format the releasedOn date of album with moment.js.
 
 `bower install moment -save`
+
+and add it to our assets through broccoli (in Brocfile.js)
+
+`app.import('bower_components/moment/moment.js');`
+
+
+Let's create a component to use it:
 
 `ember g component format-date`
 
@@ -672,8 +721,9 @@ export default Ember.Component.extend({
 ```
 and format-date.hbs
 
-`<small>{{prependText}} {{formattedDate}}</small>
-`
+```
+<small>{{prependText}} {{formattedDate}}</small>
+```
 
 and now change artists/show.hbs
 
@@ -693,7 +743,7 @@ and now change artists/show.hbs
               <h5>
                 {{album.name}}
                 <br>
-                {{formatted-date date=album.releasedOn format='LL' prependText='Issued'}}
+                {{format-date date=album.releasedOn format='LL' prependText='Released'}}
               </h5>
             </div>
           </div>
@@ -708,5 +758,4 @@ and now change artists/show.hbs
 </div>
 ```
 
-Done for today!
-
+Feel free to send your feedbacks!

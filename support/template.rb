@@ -1,12 +1,13 @@
 # Install the required gem
+
 gem "active_model_serializers", "0.9.3"
 # rack-cors allows rack-based applications to make cross domain AJAX calls without using workarounds such as JSONP
 gem 'rack-cors', require: 'rack/cors'
 gem_group :development, :test do
   gem "rspec-rails", "3.2.1"
+  gem "factory_girl_rails", "4.5.0"
 end
 gem_group :test do
-  gem "factory_girl_rails", "4.5.0"
   gem "faker", "1.4.3"
   gem "shoulda-matchers", "2.8.0", require: false
 end
@@ -21,6 +22,7 @@ File.open("config/initializers/active_model_serializers.rb", "w") do |f|
 end)
 end
 
+# Adds CORS directive in application.rb
 line = 'config.active_record.raise_in_transactional_callbacks = true'
 gsub_file 'config/application.rb', /(#{Regexp.escape(line)})/mi do
 |match|
@@ -31,14 +33,17 @@ gsub_file 'config/application.rb', /(#{Regexp.escape(line)})/mi do
     })
 end
 
+# Copy the seed data in the new project
 run 'cp ../support/seeds.rb db/seeds.rb'
 
+# Install rspec
 generate("rspec:install")
 
+# Create the artist and album models
 generate(:model, "artist name:string")
 generate(:model, "album name:string released_on:date artist:belongs_to artwork_url:string")
 
-
+# config rspec
 line1 = "require 'rspec/rails'"
 line2 = 'config.fixture_path = "#{::Rails.root}/spec/fixtures"'
 gsub_file 'spec/rails_helper.rb', /(#{Regexp.escape(line1)})/mi do
@@ -52,7 +57,7 @@ gsub_file 'spec/rails_helper.rb', /(#{Regexp.escape(line2)})/mi do
 config.include FactoryGirl::Syntax::Methods)
 end
 
-
+# test your artist model
 File.open("spec/models/artist_spec.rb", "r+") do |f|
   f.write %Q(require 'rails_helper'
 
@@ -63,6 +68,7 @@ RSpec.describe Artist, type: :model do
 end)
 end
 
+# change model/artist.rb to pass the test
 File.open("app/models/artist.rb", "r+") do |f|
   f.write %Q(class Artist < ActiveRecord::Base
   has_many :albums, dependent: :destroy
@@ -72,6 +78,7 @@ File.open("app/models/artist.rb", "r+") do |f|
 end)
 end
 
+# test your album model
 File.open("spec/models/album_spec.rb", "r+") do |f|
   f.write %Q(require 'rails_helper'
 
@@ -82,6 +89,7 @@ RSpec.describe Album, type: :model do
 end)
 end
 
+# change model/album.rb to pass the test
 File.open("app/models/album.rb", "r+") do |f|
   f.write %Q(class Album < ActiveRecord::Base
   belongs_to :artist
@@ -90,6 +98,7 @@ File.open("app/models/album.rb", "r+") do |f|
 end)
 end
 
+# Edit the factories for your models
 File.open("spec/factories/artists.rb", "r+") do |f|
   f.write %Q(FactoryGirl.define do
   factory :artist do
@@ -97,7 +106,6 @@ File.open("spec/factories/artists.rb", "r+") do |f|
   end
 end)
 end
-
 File.open("spec/factories/albums.rb", "r+") do |f|
   f.write %Q(FactoryGirl.define do
   factory :album do
@@ -109,26 +117,27 @@ File.open("spec/factories/albums.rb", "r+") do |f|
 end)
 end
 
+# generate and edit the serializers for your models
 generate(:serializer, "artist name:string")
 generate(:serializer, "album name:string")
-
 File.open("app/serializers/artist_serializer.rb", "r+") do |f|
   f.write %Q(class ArtistSerializer < ActiveModel::Serializer
   attributes :id, :name
   has_many :albums
 end)
 end
-
 File.open("app/serializers/album_serializer.rb", "r+") do |f|
   f.write %Q(class AlbumSerializer < ActiveModel::Serializer
   attributes :id, :name, :released_on, :artwork_url, :artist_id
 end)
 end
 
+# generate the controllers serving your data
 generate(:controller, "Api::V1::Artists index show create update destroy --skip-assets --skip-template-engine --skip-helper")
 generate(:controller, "Api::V1::Albums index show create update destroy --skip-assets --skip-template-engine --skip-helper")
 generate(:controller, "Api::Csrf index --skip-assets --skip-template-engine --skip-helper")
 
+# test controllers/artists
 File.open("spec/controllers/api/v1/artists_controller_spec.rb", "r+") do |f|
   f.write %Q(require 'rails_helper'
 
@@ -206,6 +215,7 @@ RSpec.describe Api::V1::ArtistsController, type: :controller do
 end)
 end
 
+# makes your test pass
 File.open("app/controllers/api/v1/artists_controller.rb", "r+") do |f|
   f.write %Q(class Api::V1::ArtistsController < ApplicationController
   def index
@@ -229,8 +239,11 @@ File.open("app/controllers/api/v1/artists_controller.rb", "r+") do |f|
 
   def update
     @artist = Artist.find(params[:id])
-    @artist.update_attributes sanitizer
-    render json: @artist
+    if @artist.update_attributes sanitizer
+      render json: @artist, serializer: ArtistSerializer, status: :updated
+    else
+      render json: {errors: @artist.errors}, status: :unprocessable_entity
+    end
   end
 
   def destroy
@@ -241,11 +254,12 @@ File.open("app/controllers/api/v1/artists_controller.rb", "r+") do |f|
   private
 
   def sanitizer
-    params.require(:artist).permit(:name, :released_on, :artist_id, :artwork_url)
+    params.require(:artist).permit(:name)
   end
 end)
 end
 
+# test your albums controller
 File.open("spec/controllers/api/v1/albums_controller_spec.rb", "r+") do |f|
   f.write %Q(require 'rails_helper'
 
@@ -324,6 +338,7 @@ RSpec.describe Api::V1::AlbumsController, type: :controller do
 end)
 end
 
+# make the test pass
 File.open("app/controllers/api/v1/albums_controller.rb", "r+") do |f|
   f.write %Q(class Api::V1::AlbumsController < ApplicationController
   def index
@@ -347,8 +362,11 @@ File.open("app/controllers/api/v1/albums_controller.rb", "r+") do |f|
 
   def update
     @album = Album.find(params[:id])
-    @album.update_attributes sanitizer
-    render json: @album
+    if @album.update_attributes sanitizer
+      render json: @album, serializer: ArtistSerializer, status: :updated
+    else
+      render json: {errors: @album.errors}, status: :unprocessable_entity
+    end
   end
 
   def destroy
@@ -364,7 +382,7 @@ File.open("app/controllers/api/v1/albums_controller.rb", "r+") do |f|
 end)
 end
 
-
+# test your csrf controller
 File.open("spec/controllers/api/csrf_controller_spec.rb", "w") do |f|
   f.write %Q(require 'rails_helper'
 
@@ -380,6 +398,7 @@ end
 )
 end
 
+# generate a simple csrf controller, serving the csrf key for your user
 File.open("app/controllers/api/csrf_controller.rb", "w") do |f|
   f.write %Q(class Api::CsrfController < ApplicationController
 
@@ -390,6 +409,7 @@ end
 )
 end
 
+# edit your routes
 run "rm config/routes.rb"
 File.open("config/routes.rb", "w") do |f|
   f.write %Q(Rails.application.routes.draw do
@@ -403,6 +423,7 @@ File.open("config/routes.rb", "w") do |f|
 end)
 end
 
+# create your database and seed it with the data
 inside app_name do
   rake "db:drop"
   rake "db:create"
@@ -411,8 +432,7 @@ inside app_name do
   rake "db:seed"
 end
 
-
-
+# this method is used above to insert text in files at specific line
 def gsub_file(path, regexp, *args, &block)
   content = File.read(path).gsub(regexp, *args, &block)
   File.open(path, 'wb') { |file| file.write(content) }

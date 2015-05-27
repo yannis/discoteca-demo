@@ -220,12 +220,22 @@ bands = [
     ]
   },
   {
-    name: "The Beyond",
+    name: "Helmet",
     albums: [
       {
-        name: "Pablo Honey",
-        released_on: "22 February 1993",
-        artwork_url: "http://upload.wikimedia.org/wikipedia/en/0/0f/Radiohead.pablohoney.albumart.jpg"
+        name: "Strap It On",
+        released_on: "March 3, 1990",
+        artwork_url: "http://upload.wikimedia.org/wikipedia/en/e/eb/Helmet-StrapItOn.jpg"
+      },
+      {
+        name: "Meantime",
+        released_on: "June 23, 1992",
+        artwork_url: "http://upload.wikimedia.org/wikipedia/en/3/35/Helmet_Meantime.jpg"
+      },
+      {
+        name: "Betty",
+        released_on: "June 21, 1994",
+        artwork_url: "http://upload.wikimedia.org/wikipedia/en/c/cf/Helmet-Betty.jpg"
       },
     ]
   }

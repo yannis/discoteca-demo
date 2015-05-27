@@ -1,0 +1,11 @@
+<form {{action "save" on="submit"}}>
+  <div class="form-group {{if model.errors.name 'has-error has-feedback' 'has-no-error'}}">
+    {{input value=model.name classNames='form-control' placeholder='Name'}}
+    {{#each error in model.errors.name}}
+      <span class="glyphicon glyphicon-remove form-control-feedback" aria-hidden="true"></span>
+      <p class="text-danger pull-right">Name {{error.message}}</p>
+    {{/each}}
+  </div>
+  <input type="submit" value="Save" class="btn btn-success">
+  <button {{action "cancel"}} class="btn btn-default">cancel</button>
+</form>

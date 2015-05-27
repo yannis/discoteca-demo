@@ -1,6 +1,10 @@
 .DS_Store
-dicoteca/
-rails/
-ember/
+/rails/tmp/*
+/rails/log/*
+/rails/db/*.sqlite3
+ember/bower_components/*
+ember/dist/*
+ember/node_modules/*
+ember/tmp/*
 bundle/
-discoteca.sublime-workspace
+discoteca-demo.sublime-workspace

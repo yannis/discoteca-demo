@@ -1,0 +1,26 @@
+<div class='row'>
+  <div class='col-sm-3'>
+    <h2>
+      Artists
+      {{#link-to "artists.new" classNames='btn btn-success btn-small' title="Enter a new artist"}}
+        <span class="glyphicon glyphicon-plus"></span>
+      {{/link-to}}
+    </h2>
+    <ul class='artists list-group'>
+      {{#each controller as |artist|}}
+        <li class="list-group-item artist">
+          {{link-to artist.name 'artists.show' artist title=name}}
+          <a href="#" {{action "delete" artist}} class="text-danger pull-right" title="Destroy this artist">
+            <span class="glyphicon glyphicon-trash"></span>
+          </a>
+          {{#link-to 'artists.edit' artist classNames='pull-right'}}
+            <span class="glyphicon glyphicon-pencil"></span>
+          {{/link-to}}
+        </li>
+      {{/each}}
+    </ul>
+  </div>
+  <div class='col-sm-9'>
+    {{outlet}}
+  </div>
+</div>

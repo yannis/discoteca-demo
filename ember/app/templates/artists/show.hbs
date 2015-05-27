@@ -1,0 +1,28 @@
+<div class='row'>
+  <div class='col-sm-12 artist-details'>
+    <h3 class='artist-name'>{{model.name}}</h3>
+    {{#if model.albums}}
+      <div class="artist-albums">
+        <h4>Albums ({{model.albums.length}})</h4>
+        {{#each album in model.albums}}
+          <div class="artist-album row">
+            <div class="col-sm-3">
+              <img class="img-thumbnail pull-left" src={{album.artworkUrl}} alt="album artwork" width='150'>
+            </div>
+            <div class="col-sm-9">
+              <h5>
+                {{album.name}}
+                <br>
+                {{format-date date=album.releasedOn format='LL' prependText='Released'}}
+              </h5>
+            </div>
+          </div>
+        {{/each}}
+      </div>
+    {{else}}
+      <div class='well'>
+        No album yet
+      </div>
+    {{/if}}
+  </div>
+</div>

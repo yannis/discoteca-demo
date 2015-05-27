@@ -409,7 +409,7 @@ end
 )
 end
 
-# edit your routes
+# edit your routes to access your resources
 run "rm config/routes.rb"
 File.open("config/routes.rb", "w") do |f|
   f.write %Q(Rails.application.routes.draw do

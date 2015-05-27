@@ -25,13 +25,13 @@ And now run:
 
 ## the Ember front-end
 
-To create the ember app, we will use ember-cli which provides us with many different tool to manage an ember app:
+To create the ember app, we will use [ember-cli](http://www.ember-cli.com/) which provides us with many different tools to manage an ember app:
 
   - a common project structure
   - ES6 modules support (through the ES6 Module Transpiler)
   - a fast asset pipeline (broccoli)
   - generators
-  - a test environment
+  - a test environment (with QUnit)
   - livereload
   - …
 
@@ -53,14 +53,16 @@ Now visit [http://localhost:4200](http://localhost:4200).
 
 Ember greats us!
 
-We can quickly style this by adding bootstrap via CDN (in app.html):
+### Get some style
+
+We can quickly style this by adding bootstrap via CDN (in app/index.html):
 
 ```
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
 ```
 
-Change the title in application.hbs to Discoteca (and add some bootsrap markup).
+Change the title in templates/application.hbs to Discoteca (and add some bootstrap markup).
 
 ```
 <div class='container'>
@@ -81,9 +83,11 @@ All tests are green which is expected since we still haven't modified anything.
 Reload the page and open the console: -> errors that have to be corrected
 -->
 
-If we reload the page, we can see Content Security Policy as our applications try to reach assets autside of its domain.
+### Follow the Content Security Policy
 
-We can correct these errors the [content-security-policy](http://www.ember-cli.com/#content-security-policy) by editing `env.js and add:
+If we open the console and reload the page, we can see Content Security Policy errors as our applications try to reach assets outside of its domain.
+
+We can correct these errors the [content-security-policy](http://www.ember-cli.com/#content-security-policy) by editing config/environment.js and add:
 
 ```
 module.exports = function(environment) {
@@ -101,11 +105,17 @@ module.exports = function(environment) {
     …
 ```
 
-It would be nice to see a list of artists when we visit the /artists route
+### Get the data
 
-Let's try to TDD that by creating an acceptance test: `ember g acceptance-test artists`
+It would be nice to see a list of artists when we visit the /artists route.
 
-Modify the test:
+Let's try to TDD that by creating an acceptance test: `$ ember g acceptance-test artists`
+
+Her we use one of the many generators provided by ember-cli.
+
+(To see a full list, `$ ember help generate`)
+
+Modify the generated tests/acceptance/artists-test.js:
 
 ```
 test('visiting /artists', function(assert) {
@@ -119,11 +129,11 @@ test('visiting /artists', function(assert) {
 });
 ```
 
-To make this test pass we have to create the artist resource (model, route):
+To make this test pass we have to create the artists resource:
 
-`ember generate resource artists name:string`
+`$ ember g resource artists name:string`
 
-Bunch of things is generated…
+A bunch of files is generated: model, route, template and the associated test files.
 
 Let's change the route/artists to get the model from the API.
 
@@ -133,24 +143,24 @@ model: function(){
 }
 ```
 
-To retrive our artists, we will need an adapter:
+To retrieve our artists, we will need an adapter:
 
-An adapter is an object that receives requests from a store and translates them into the appropriate action to take against your persistence layer.
+An **adapter** is an object that receives requests from a store and translates them into the appropriate action to take against your persistence layer.
 
 To exploit our active_model_serializer API, we will use an adapter from ember-data.
 
+### What is ember-data?
+
 - ORM-like library for ember.js
+- agnostic to the underlying persistence mechanism
 - uses Promises
 - manage loading and saving records
 
-At this time ember-data is still beta (v1.0.0-beta.17) but v1 is planned to be released early june.
-
-So ember-cli is a cli for ember:
-  - it provides a series of generators: `ember help generate`
+At this time ember-data is still beta (v1.0.0-beta.18) but v1 is planned to be released early june.
 
 So let's generate an adapter for our application:
 
-`ember g adapter application`
+`$ ember g adapter application`
 
 By default it uses the DS.RESTAdapter. Since we've built our api with active_model_serializers, we have to tell ember-data to use its built-in [DS.ActiveModelAdapter](http://emberjs.com/api/data/classes/DS.ActiveModelAdapter.html).
 
@@ -191,7 +201,7 @@ Let's sort them by name.
 
 We have to create a the artists controller for this.
 
-`ember generate controller artists`
+`$ ember g controller artists`
 
 and add the sort properties there.
 
@@ -229,7 +239,7 @@ test('visiting /artists', function(assert) {
 
 To make this pass generate the route:
 
-`ember g route artists/show  --path=:artist_id`
+`$ ember g route artists/show  --path=:artist_id`
 
 Here we define :artist_id as a dynamic segment
 
@@ -288,7 +298,7 @@ andThen(function() {
 });
 ```
 
-The template…
+The template:
 
 ```
 <div class='row'>
@@ -325,7 +335,7 @@ The template…
 
 To make it work we have to create a new Ember-Data model: the Album
 
-`ember g model album name:string released_on:date artwork_url:string artist:belongsTo`
+`$ ember g model album name:string released_on:date artwork_url:string artist:belongsTo`
 
 change the album.js model to load the associated artist asynchronously:
 
@@ -338,7 +348,7 @@ and tel the artist.js model to load the associated albums too.
 
 Let's add the possibility to create an artist
 
-`ember g route artists/new  --path=new`
+`$ ember g route artists/new  --path=new`
 
 and change route/artists/new to create a new artist
 
@@ -514,7 +524,7 @@ And a simple link to the action for every artists in artists.hbs
 
 And the possibility to edit an artist:
 
-`ember g route artists/edit  --path=:artist_id/edit`
+`$ ember g route artists/edit  --path=:artist_id/edit`
 
 Add a edit link to the artists.hbs template:
 
@@ -574,7 +584,7 @@ For the artists/edit.hbs template, let's reuse the form we'have alread built by 
 </div>
 ```
 
-and the artists/-form.hbs partial: `ember g template artists/-form`
+and the artists/-form.hbs partial: `$ ember g template artists/-form`
 
 ```
 <form {{action "save" on="submit"}}>
@@ -607,7 +617,7 @@ We can use the same partial in artist/new.hbs:
 
 We have to implement the save and cancel actions in the artists/edit.js controller:
 
-`ember g controller artists/edit`
+`$ ember g controller artists/edit`
 
 and change it to:
 
@@ -706,7 +716,7 @@ and add it to our assets through broccoli (in Brocfile.js)
 
 Let's create a component to use it:
 
-`ember g component format-date`
+`$ ember g component format-date`
 
 Edit components/format-date.js
 
@@ -758,4 +768,4 @@ and now change artists/show.hbs
 </div>
 ```
 
-Feel free to send your feedbacks!
+Feel free to send your corrections and remarks!

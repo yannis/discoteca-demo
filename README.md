@@ -1,5 +1,7 @@
 # Prerequisites
 
+This project has been successfully built with:
+
 - Ruby 2.2.2
 - Rails 4.2.1
 - Bundler 1.9.6
@@ -12,16 +14,16 @@
 
 ## the Rails back-end
 
-To gain some time, we will use a Ruby on Rails template to generate the API that will serve the data.
+To gain some time, we will use a Ruby on Rails template to generate the app that will serve the API.
 
 Before running it, go read the commented template `support/template.rb`.
 
 And now run:
 
-- `rails new discoteca --skip-sprockets --skip-test-unit --skip-javascript --skip-turbolinks --skip-bundle –no-ri –no-rdoc --skip-jbuilder --skip-git --database sqlite3 -m support/template.rb`
-- `mv discoteca rails`
-- `cd rails`
-- `bundle exec rspec` to run our tests
+- `$ rails new discoteca --skip-sprockets --skip-test-unit --skip-javascript --skip-turbolinks --skip-bundle –no-ri –no-rdoc --skip-jbuilder --skip-git --database sqlite3 -m support/template.rb`
+- `$ mv discoteca rails`
+- `$ cd rails`
+- `$ bundle exec rspec` to run our tests
 
 ## the Ember front-end
 
@@ -37,15 +39,15 @@ To create the ember app, we will use [ember-cli](http://www.ember-cli.com/) whic
 
 Generate the Ember.js app
 
-- `ember new discoteca --skip-git`
+- `$ ember new discoteca --skip-git`
 
 This creates the project structure and load the necessary librairies through npm (ember, ember-data,…)
 
 Rename the project to 'ember', and start the server:
 
-- `mv discoteca ember`
-- `cd discoteca ember`
-- `ember server --proxy=http://localhost:3000`
+- `$ mv discoteca ember`
+- `$ cd discoteca ember`
+- `$ ember server --proxy=http://localhost:3000`
 
 This commande starts a node Express server to serve our application and the `--proxy` flag tells the server to proxy all ajax requests to the given address.
 
@@ -55,12 +57,18 @@ Ember greats us!
 
 ### Get some style
 
-We can quickly style this by adding bootstrap via CDN (in app/index.html):
+We can quickly style this by adding bootstrap via the ember-cli-bootstrap-sassy addon:
 
+  - first install sass: `$ npm install ember-cli-sass@3.1.0 --save-dev`
+  - then bootstrap-sassy: `$ ember install ember-cli-bootstrap-sassy`
+  - finally import bootstrap in styles/app.scss: `@import 'bootstrap'`
+  - restart the server
+
+<!--
 ```
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
-```
+``` -->
 
 Change the title in templates/application.hbs to Discoteca (and add some bootstrap markup).
 
@@ -94,11 +102,11 @@ module.exports = function(environment) {
   var ENV =
     contentSecurityPolicy: {
       'default-src': "'none'",
-      'script-src': "'self' https://maxcdn.bootstrapcdn.com/",
-      'font-src': "'self' https://maxcdn.bootstrapcdn.com/",
+      'script-src': "'self'",
+      'font-src': "'self'",
       'connect-src': "'self'",
       'img-src': "'self' http://upload.wikimedia.org/",
-      'style-src': "'self' 'unsafe-inline' https://maxcdn.bootstrapcdn.com/",
+      'style-src': "'self' 'unsafe-inline'",
       'media-src': "'self'",
       'report-uri': "http://localhost:4200"
     },

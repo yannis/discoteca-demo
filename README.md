@@ -57,9 +57,9 @@ Ember greats us!
 
 ### Get some style
 
-We can quickly style this by adding bootstrap via the ember-cli-bootstrap-sassy addon:
+We can quickly style this by adding bootstrap via the [ember-cli-bootstrap-sassy](https://github.com/lifegadget/ember-cli-bootstrap-sassy) addon:
 
-  - first install sass: `$ npm install ember-cli-sass@3.1.0 --save-dev`
+  - first install [ember-cli-sass](https://github.com/aexmachina/ember-cli-sass): `$ npm install ember-cli-sass@3.1.0 --save-dev`
   - then bootstrap-sassy: `$ ember install ember-cli-bootstrap-sassy`
   - finally import bootstrap in styles/app.scss: `@import 'bootstrap'`
   - restart the server
@@ -204,6 +204,8 @@ We now have to change the artists.hbs template to actually show the artists
 </div>
 `````
 
+### Sort the artists
+
 The artists are all scrambled.
 Let's sort them by name.
 
@@ -220,6 +222,8 @@ export default Ember.ArrayController.extend({
   sortProperties: ['name']
 });
 ```
+
+### Showing an artist
 
 It would be great to see the details of an artist when clicking its name…
 
@@ -293,6 +297,8 @@ And link to each artists in templates/artists.hbs:
 </div>
 ```
 
+### List the artist albums
+
 Let's show the associated albums:
 
 ```
@@ -353,6 +359,7 @@ and tel the artist.js model to load the associated albums too.
 
 `albums: DS.hasMany('album', {async: true})`
 
+### Save a new artist
 
 Let's add the possibility to create an artist
 
@@ -418,13 +425,13 @@ export default Ember.Controller.extend({
   }
 });
 ```
+#### CSRF
 
 When we try this it fails with an error 422.
-It's a CSRF it's due to an ActionController::InvalidAuthenticityToken error.
-This can be corrected by adding the CSRF key to the header of the request.
-An there's an addon for that.
+It's due to an ActionController::InvalidAuthenticityToken error.
+This can be corrected by adding the CSRF key to the header of the POST request required to save the artist.
 
-https://github.com/abuiles/rails-csrf
+An there's an addon for that: [rails-csrf](https://github.com/abuiles/rails-csrf)
 
 Let's install it: `npm install rails-csrf@1.0.1 --save`
 and modify ember/app/app.js by adding
@@ -479,7 +486,7 @@ We can now add a link to the new form in artists.hbs:
 
 Let's add the possibility to destroy an artist.
 
-This time we don't need an artist, a simple controllers/artists.js action is enough.
+This time we don't need a route, a simple 'delete' action defined in controllers/artists.js action is enough.
 
 ```
 import Ember from 'ember';
@@ -530,6 +537,8 @@ And a simple link to the action for every artists in artists.hbs
 
 ```
 
+### Artist edition
+
 And the possibility to edit an artist:
 
 `$ ember g route artists/edit  --path=:artist_id/edit`
@@ -565,7 +574,7 @@ Add a edit link to the artists.hbs template:
 </div>
 ```
 
-and change route/artists/edit to get the following model
+and change route/artists/edit to get the artist model:
 
 ```
 import Ember from 'ember';
@@ -623,7 +632,7 @@ We can use the same partial in artist/new.hbs:
 </div>
 ```
 
-We have to implement the save and cancel actions in the artists/edit.js controller:
+We have to implement the save and cancel actions in the app/controllers/artists/edit.js controller:
 
 `$ ember g controller artists/edit`
 
@@ -712,6 +721,8 @@ Let's add some style to app.css to highlight the active link:
   color: red;
 }
 ```
+
+### Let's create a component
 
 Format the releasedOn date of album with moment.js.
 

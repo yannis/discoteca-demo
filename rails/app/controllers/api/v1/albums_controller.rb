@@ -20,8 +20,11 @@ class Api::V1::AlbumsController < ApplicationController
 
   def update
     @album = Album.find(params[:id])
-    @album.update_attributes sanitizer
-    render json: @album
+    if @album.update(sanitizer)
+      render json: @album, serializer: AlbumSerializer, status: 200
+    else
+      render json: {errors: @album.errors}, status: :unprocessable_entity
+    end
   end
 
   def destroy

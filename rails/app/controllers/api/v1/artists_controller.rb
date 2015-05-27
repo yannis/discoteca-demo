@@ -20,8 +20,8 @@ class Api::V1::ArtistsController < ApplicationController
 
   def update
     @artist = Artist.find(params[:id])
-    if @artist.update_attributes sanitizer
-      render json: @artist, serializer: ArtistSerializer, status: :updated
+    if @artist.update(sanitizer)
+      render json: @artist, serializer: ArtistSerializer, status: 200
     else
       render json: {errors: @artist.errors}, status: :unprocessable_entity
     end

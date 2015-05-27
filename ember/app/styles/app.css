@@ -1,0 +1,4 @@
+.artists a.active {
+  font-weight: bold;
+  color: red;
+}
